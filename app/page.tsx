@@ -5,24 +5,34 @@ import WorkoutLogger from "@/components/WorkoutLogger";
 import PlateCalculator from "@/components/PlateCalculator";
 
 export default function Home() {
-  // Local Account Authentication State
+  // 1. Local Account State
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
 
-  // App Navigation & Session State
+  // 2. Onboarding & App State
+  const [isOnboarded, setIsOnboarded] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [age, setAge] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+
   const [activeTab, setActiveTab] = useState<"workout" | "plates" | "progress">(
     "workout",
   );
   const [sessionStarted, setSessionStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check saved local account on load
+  // Check saved local account & onboarding on load
   useEffect(() => {
     const savedUser = localStorage.getItem("jdas_local_user");
     if (savedUser) {
       setUser(JSON.parse(savedUser));
+    }
+    const savedProfile = localStorage.getItem("jdas_profile");
+    if (savedProfile) {
+      setIsOnboarded(true);
     }
   }, []);
 
@@ -36,23 +46,32 @@ export default function Home() {
       localStorage.setItem("jdas_local_user", JSON.stringify(userData));
       setUser(userData);
       setIsLoading(false);
-    }, 400); // Smooth loading feel
+    }, 300);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("jdas_local_user");
+    localStorage.removeItem("jdas_profile");
     setUser(null);
+    setIsOnboarded(false);
     setUsernameInput("");
     setPasswordInput("");
   };
 
-  // If not logged in, show minimalist username/password login screen
+  const handleCompleteOnboarding = (e: React.FormEvent) => {
+    e.preventDefault();
+    const profileData = { fullName, age, height, weight };
+    localStorage.setItem("jdas_profile", JSON.stringify(profileData));
+    setIsOnboarded(true);
+  };
+
+  // --- SCREEN 1: LOGIN / CREATE ACCOUNT ---
   if (!user) {
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center px-6">
-        <div className="max-w-sm w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-xs">
+        <div className="max-w-sm w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-sm">
           <div className="text-center mb-8">
-            <div className="w-10 h-10 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-white font-black text-lg shadow-md mb-3 animate-pulse">
+            <div className="w-12 h-12 bg-emerald-600 rounded-2xl mx-auto flex items-center justify-center text-white font-black text-xl shadow-md mb-3">
               J
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900">
@@ -102,7 +121,7 @@ export default function Home() {
                 <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
               ) : (
                 <span>
-                  {isRegistering ? "Create Account & Start" : "Sign In →"}
+                  {isRegistering ? "Create Account & Continue" : "Sign In →"}
                 </span>
               )}
             </button>
@@ -123,10 +142,95 @@ export default function Home() {
     );
   }
 
-  // Logged in Dashboard & Session Runner
+  // --- SCREEN 2: ONBOARDING / PERSONAL METRICS ---
+  if (!isOnboarded) {
+    return (
+      <main className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center px-6 py-12">
+        <div className="max-w-md w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-sm">
+          <div className="mb-6">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
+              JDAS PRO • Setup 1/2
+            </span>
+            <h2 className="text-2xl font-black text-slate-900 mt-3">
+              Personal Metrics
+            </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Let&apos;s set up your profile for precise tracking.
+            </p>
+          </div>
+
+          <form onSubmit={handleCompleteOnboarding} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Full Name
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Jake"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="26"
+                  value={age}
+                  onChange={(e) => setAge(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  Weight (kg)
+                </label>
+                <input
+                  type="number"
+                  required
+                  placeholder="74"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                Height (cm)
+              </label>
+              <input
+                type="number"
+                required
+                placeholder="170"
+                value={height}
+                onChange={(e) => setHeight(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full mt-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2"
+            >
+              <span>Continue to Workout Schedule →</span>
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
+  // --- SCREEN 3: MAIN WORKOUT DASHBOARD ---
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24">
-      {/* Minimalist Top Header */}
+      {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">
           <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
@@ -150,8 +254,7 @@ export default function Home() {
       {/* Main Container */}
       <div className="max-w-md mx-auto px-5 pt-6">
         {!sessionStarted && activeTab === "workout" && (
-          <div className="space-y-6 animate-fadeIn">
-            {/* Today's Workout Routine Card */}
+          <div className="space-y-6">
             <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
               <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md">
                 Active Routine
@@ -165,27 +268,14 @@ export default function Home() {
               </p>
 
               <button
-                onClick={() => {
-                  setIsLoading(true);
-                  setTimeout(() => {
-                    setSessionStarted(true);
-                    setIsLoading(false);
-                  }, 250);
-                }}
+                onClick={() => setSessionStarted(true)}
                 className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-2xl shadow-md transition-all text-base flex items-center justify-center gap-2"
               >
-                {isLoading ? (
-                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                ) : (
-                  <>
-                    <span>Start Workout Session</span>
-                    <span className="text-lg">→</span>
-                  </>
-                )}
+                <span>Start Workout Session</span>
+                <span className="text-lg">→</span>
               </button>
             </div>
 
-            {/* Quick Overview Stats */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white border border-slate-200 p-5 rounded-2xl text-center shadow-xs">
                 <span className="text-xs font-bold text-slate-400 uppercase">
@@ -208,7 +298,7 @@ export default function Home() {
         )}
 
         {sessionStarted && activeTab === "workout" && (
-          <div className="animate-fadeIn">
+          <div>
             <button
               onClick={() => setSessionStarted(false)}
               className="text-xs font-bold text-slate-500 hover:text-slate-800 mb-4 flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-xs"
@@ -234,7 +324,7 @@ export default function Home() {
         )}
       </div>
 
-      {/* Minimalist Bottom Navigation Bar */}
+      {/* Bottom Navigation Bar */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 shadow-lg z-30">
         <div className="max-w-md mx-auto flex justify-around items-center">
           <button
