@@ -5,13 +5,11 @@ import WorkoutLogger from "@/components/WorkoutLogger";
 import PlateCalculator from "@/components/PlateCalculator";
 
 export default function Home() {
-  // 1. Local Account State
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [usernameInput, setUsernameInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
 
-  // 2. Onboarding & App State
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [fullName, setFullName] = useState("");
   const [age, setAge] = useState("");
@@ -24,7 +22,6 @@ export default function Home() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check saved local account & onboarding on load
   useEffect(() => {
     const savedUser = localStorage.getItem("jdas_local_user");
     if (savedUser) {
@@ -147,17 +144,23 @@ export default function Home() {
     return (
       <main className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center px-6 py-12">
         <div className="max-w-md w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-sm">
-          <div className="mb-6">
+          <div className="mb-6 flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
-              JDAS PRO • Setup 1/2
+              Setup 1/2
             </span>
-            <h2 className="text-2xl font-black text-slate-900 mt-3">
-              Personal Metrics
-            </h2>
-            <p className="text-sm text-slate-500 mt-1">
-              Let&apos;s set up your profile for precise tracking.
-            </p>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-semibold text-rose-600 hover:underline"
+            >
+              Sign Out
+            </button>
           </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-1">
+            Personal Metrics
+          </h2>
+          <p className="text-sm text-slate-500 mb-6">
+            Let&apos;s set up your profile for precise tracking.
+          </p>
 
           <form onSubmit={handleCompleteOnboarding} className="space-y-4">
             <div>
@@ -230,7 +233,7 @@ export default function Home() {
   // --- SCREEN 3: MAIN WORKOUT DASHBOARD ---
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24">
-      {/* Top Header */}
+      {/* Prominent Header with Sign Out Button */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-xs">
         <div className="flex items-center gap-2.5">
           <div className="w-3 h-3 rounded-full bg-emerald-600"></div>
@@ -239,14 +242,14 @@ export default function Home() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">
             👤 {user.username}
           </span>
           <button
             onClick={handleLogout}
-            className="text-xs font-semibold text-slate-400 hover:text-rose-600 transition-colors"
+            className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
           >
-            Logout
+            Sign Out
           </button>
         </div>
       </header>
