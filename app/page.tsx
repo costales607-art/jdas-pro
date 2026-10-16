@@ -4,6 +4,15 @@ import React, { useState, useEffect } from "react";
 import WorkoutLogger from "@/components/WorkoutLogger";
 import PlateCalculator from "@/components/PlateCalculator";
 
+type Tab = "workout" | "plates" | "progress";
+
+const inputClass =
+  "w-full rounded-xl border border-yellow-200 bg-yellow-50/60 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-300";
+const labelClass =
+  "block text-xs font-bold tracking-wide text-yellow-800 mb-1.5";
+const primaryButton =
+  "w-full rounded-xl bg-yellow-400 py-3 text-sm font-black text-slate-950 shadow-md transition hover:bg-yellow-300 active:scale-[0.99] disabled:opacity-60";
+
 export default function Home() {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
@@ -16,59 +25,125 @@ export default function Home() {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
 
-  const [activeTab, setActiveTab] = useState<"workout" | "plates" | "progress">(
-    "workout",
-  );
+  const [activeTab, setActiveTab] = useState<Tab>("workout");
   const [sessionStarted, setSessionStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
+  // Restore saved session on first load
   useEffect(() => {
-    const savedUser = localStorage.getItem("jdas_local_user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem("jdas_local_user");
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed);
+        const savedProfile = localStorage.getItem(
+          `jdas_profile_${parsed.username}`,
+        );
+        if (savedProfile) {
+          const p = JSON.parse(savedProfile);
+          setFullName(p.fullName || "");
+          setAge(p.age || "");
+          setHeight(p.height || "");
+          setWeight(p.weight || "");
+          setIsOnboarded(true);
+        }
+      }
+    } catch {
+      localStorage.removeItem("jdas_local_user");
     }
-    const savedProfile = localStorage.getItem("jdas_profile");
-    if (savedProfile) {
-      setIsOnboarded(true);
-    }
+    setIsReady(true);
   }, []);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
     if (!usernameInput.trim() || !passwordInput.trim()) return;
 
+    const username = usernameInput.trim();
+    let accounts: Record<string, string> = {};
+    try {
+      accounts = JSON.parse(localStorage.getItem("jdas_accounts") || "{}");
+    } catch {
+      accounts = {};
+    }
+
+    if (isRegistering) {
+      if (accounts[username]) {
+        alert("This username already exists. Please sign in.");
+        return;
+      }
+      accounts[username] = passwordInput;
+      localStorage.setItem("jdas_accounts", JSON.stringify(accounts));
+    } else {
+      if (!accounts[username] || accounts[username] !== passwordInput) {
+        alert(
+          "Incorrect username or password. If you are new, create an account first.",
+        );
+        return;
+      }
+    }
+
     setIsLoading(true);
-    setTimeout(() => {
-      const userData = { username: usernameInput.trim() };
-      localStorage.setItem("jdas_local_user", JSON.stringify(userData));
-      setUser(userData);
-      setIsLoading(false);
-    }, 300);
+    const userData = { username };
+    localStorage.setItem("jdas_local_user", JSON.stringify(userData));
+    setUser(userData);
+
+    // Load this user's profile if they already have one
+    try {
+      const savedProfile = localStorage.getItem(`jdas_profile_${username}`);
+      if (savedProfile) {
+        const p = JSON.parse(savedProfile);
+        setFullName(p.fullName || "");
+        setAge(p.age || "");
+        setHeight(p.height || "");
+        setWeight(p.weight || "");
+        setIsOnboarded(true);
+      } else {
+        setIsOnboarded(false);
+      }
+    } catch {
+      setIsOnboarded(false);
+    }
+    setIsLoading(false);
   };
 
   const handleLogout = () => {
     localStorage.removeItem("jdas_local_user");
-    localStorage.removeItem("jdas_profile");
     setUser(null);
     setIsOnboarded(false);
+    setSessionStarted(false);
+    setActiveTab("workout");
     setUsernameInput("");
     setPasswordInput("");
+    setFullName("");
+    setAge("");
+    setHeight("");
+    setWeight("");
   };
 
   const handleCompleteOnboarding = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
     const profileData = { fullName, age, height, weight };
-    localStorage.setItem("jdas_profile", JSON.stringify(profileData));
+    localStorage.setItem(
+      `jdas_profile_${user.username}`,
+      JSON.stringify(profileData),
+    );
     setIsOnboarded(true);
   };
+
+  // Avoid a flash of the login screen before localStorage is read
+  if (!isReady) {
+    return <main className="min-h-screen bg-yellow-50" />;
+  }
 
   // --- SCREEN 1: LOGIN / CREATE ACCOUNT ---
   if (!user) {
     return (
-      <main className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center px-6">
-        <div className="max-w-sm w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-sm">
+      <main className="min-h-screen bg-yellow-50 text-slate-900 font-sans flex flex-col justify-center px-6">
+        <div className="max-w-sm w-full mx-auto bg-white border border-yellow-200 p-8 rounded-3xl shadow-lg shadow-yellow-200/50">
           <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-amber-500 rounded-2xl mx-auto flex items-center justify-center text-slate-950 font-black text-xl shadow-md mb-3">
+            <div className="w-12 h-12 bg-yellow-400 rounded-2xl mx-auto flex items-center justify-center text-slate-950 font-black text-xl shadow-md mb-3">
               J
             </div>
             <h1 className="text-2xl font-black tracking-tight text-slate-900">
@@ -83,146 +158,118 @@ export default function Home() {
 
           <form onSubmit={handleAuth} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Username
-              </label>
+              <label className={labelClass}>Username</label>
               <input
                 type="text"
-                required
-                placeholder="Enter username"
                 value={usernameInput}
                 onChange={(e) => setUsernameInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all"
+                placeholder="Enter username"
+                autoComplete="username"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Password / Passcode
-              </label>
+              <label className={labelClass}>Password</label>
               <input
                 type="password"
-                required
-                placeholder="Enter password"
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white transition-all"
+                placeholder="Enter password"
+                autoComplete={
+                  isRegistering ? "new-password" : "current-password"
+                }
+                className={inputClass}
               />
             </div>
-
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full mt-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2"
+              className={primaryButton}
             >
-              {isLoading ? (
-                <span className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin"></span>
-              ) : (
-                <span>
-                  {isRegistering ? "Create Account & Continue" : "Sign In →"}
-                </span>
-              )}
+              {isRegistering ? "Create account" : "Sign in"}
             </button>
           </form>
 
-          <div className="text-center mt-6">
-            <button
-              onClick={() => setIsRegistering(!isRegistering)}
-              className="text-xs font-bold text-amber-600 hover:underline"
-            >
-              {isRegistering
-                ? "Already have an account? Sign in"
-                : "No account yet? Create one"}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsRegistering(!isRegistering)}
+            className="mt-5 w-full text-center text-sm font-semibold text-yellow-700 hover:text-yellow-600"
+          >
+            {isRegistering
+              ? "Already have an account? Sign in"
+              : "New here? Create an account"}
+          </button>
         </div>
       </main>
     );
   }
 
-  // --- SCREEN 2: ONBOARDING / PERSONAL METRICS ---
+  // --- SCREEN 2: ONBOARDING ---
   if (!isOnboarded) {
     return (
-      <main className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-center px-6 py-12">
-        <div className="max-w-md w-full mx-auto bg-white border border-slate-200/90 p-8 rounded-3xl shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-50 px-2.5 py-1 rounded-md">
-              Setup 1/2
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-xs font-semibold text-rose-600 hover:underline"
-            >
-              Sign Out
-            </button>
+      <main className="min-h-screen bg-yellow-50 text-slate-900 font-sans flex flex-col justify-center px-6 py-10">
+        <div className="max-w-sm w-full mx-auto bg-white border border-yellow-200 p-8 rounded-3xl shadow-lg shadow-yellow-200/50">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              Set up your profile
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Tell us a little about yourself, {user.username}.
+            </p>
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-1">
-            Personal Metrics
-          </h2>
-          <p className="text-sm text-slate-500 mb-6">
-            Let&apos;s set up your profile for precise tracking.
-          </p>
 
           <form onSubmit={handleCompleteOnboarding} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Full Name
-              </label>
+              <label className={labelClass}>Full name</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Jake"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white"
+                placeholder="Your name"
+                className={inputClass}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Age
-                </label>
+                <label className={labelClass}>Age</label>
                 <input
                   type="number"
                   required
-                  placeholder="26"
+                  min="1"
                   value={age}
                   onChange={(e) => setAge(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white text-center"
+                  placeholder="25"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                  Weight (kg)
-                </label>
+                <label className={labelClass}>Height (cm)</label>
                 <input
                   type="number"
                   required
-                  placeholder="74"
+                  min="1"
+                  value={height}
+                  onChange={(e) => setHeight(e.target.value)}
+                  placeholder="170"
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className={labelClass}>Weight (kg)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
                   value={weight}
                   onChange={(e) => setWeight(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white text-center"
+                  placeholder="70"
+                  className={inputClass}
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Height (cm)
-              </label>
-              <input
-                type="number"
-                required
-                placeholder="170"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-base font-semibold text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white text-center"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-xl shadow-md transition-all text-base flex items-center justify-center gap-2"
-            >
-              <span>Continue to Workout Schedule →</span>
+            <button type="submit" className={primaryButton}>
+              Save and continue
             </button>
           </form>
         </div>
@@ -230,142 +277,120 @@ export default function Home() {
     );
   }
 
-  // --- SCREEN 3: MAIN WORKOUT DASHBOARD ---
+  // --- SCREEN 3: MAIN APP ---
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "workout", label: "Workout" },
+    { id: "plates", label: "Plates" },
+    { id: "progress", label: "Progress" },
+  ];
+
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-4 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="w-3 h-3 rounded-full bg-amber-500"></div>
-          <h1 className="text-base font-black tracking-tight text-slate-900">
-            JDAS PRO
-          </h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-xl">
-            👤 {user.username}
-          </span>
+    <main className="min-h-screen bg-yellow-50 text-slate-900 font-sans">
+      <header className="sticky top-0 z-10 border-b border-yellow-300 bg-yellow-400 px-5 py-4 shadow-sm">
+        <div className="mx-auto flex max-w-md items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-lg font-black text-yellow-400">
+              J
+            </div>
+            <div>
+              <h1 className="text-base font-black leading-tight text-slate-950">
+                JDAS PRO
+              </h1>
+              <p className="text-xs font-medium text-yellow-900">
+                {fullName || user.username}
+              </p>
+            </div>
+          </div>
           <button
             onClick={handleLogout}
-            className="text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3.5 py-1.5 rounded-xl transition-all shadow-xs"
+            className="rounded-lg bg-slate-950 px-3 py-1.5 text-xs font-bold text-yellow-400 hover:bg-slate-800"
           >
-            Sign Out
+            Log out
           </button>
         </div>
       </header>
 
-      {/* Main Container */}
-      <div className="max-w-md mx-auto px-5 pt-6">
-        {!sessionStarted && activeTab === "workout" && (
-          <div className="space-y-6">
-            <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
-              <span className="text-xs font-bold uppercase tracking-widest text-amber-700 bg-amber-50 px-3 py-1 rounded-md">
-                Active Routine
-              </span>
-              <h2 className="text-2xl font-black text-slate-900 mt-3">
-                Chest & Triceps Hypertrophy
-              </h2>
-              <p className="text-sm text-slate-500 mt-1 leading-relaxed">
-                Log your sets, beat your weights from last week, and push
-                progressive overload cleanly.
-              </p>
-
-              <button
-                onClick={() => setSessionStarted(true)}
-                className="w-full mt-6 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-4 rounded-2xl shadow-md transition-all text-base flex items-center justify-center gap-2"
-              >
-                <span>Start Workout Session</span>
-                <span className="text-lg">→</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white border border-slate-200 p-5 rounded-2xl text-center shadow-xs">
-                <span className="text-xs font-bold text-slate-400 uppercase">
-                  Exercises
-                </span>
-                <p className="text-xl font-black text-slate-800 mt-1">
-                  4 Movements
+      <div className="mx-auto max-w-md px-5 pb-24 pt-5">
+        {activeTab === "workout" && (
+          <section>
+            {!sessionStarted ? (
+              <div className="rounded-3xl border border-yellow-200 bg-white p-6 text-center shadow-sm">
+                <h2 className="text-xl font-black text-slate-900">
+                  Ready to train?
+                </h2>
+                <p className="mt-1 mb-5 text-sm text-slate-500">
+                  Start a session to begin logging your sets.
                 </p>
+                <button
+                  onClick={() => setSessionStarted(true)}
+                  className={primaryButton}
+                >
+                  Start workout
+                </button>
               </div>
-              <div className="bg-white border border-slate-200 p-5 rounded-2xl text-center shadow-xs">
-                <span className="text-xs font-bold text-slate-400 uppercase">
-                  Target Range
-                </span>
-                <p className="text-xl font-black text-slate-800 mt-1">
-                  8 - 10 Reps
-                </p>
+            ) : (
+              <div>
+                <WorkoutLogger />
+                <button
+                  onClick={() => setSessionStarted(false)}
+                  className="mt-4 w-full rounded-xl border border-yellow-400 bg-white py-3 text-sm font-bold text-yellow-800 hover:bg-yellow-100"
+                >
+                  End session
+                </button>
               </div>
-            </div>
-          </div>
-        )}
-
-        {sessionStarted && activeTab === "workout" && (
-          <div>
-            <button
-              onClick={() => setSessionStarted(false)}
-              className="text-xs font-bold text-slate-500 hover:text-slate-800 mb-4 flex items-center gap-1.5 bg-white border border-slate-200 px-3.5 py-2 rounded-xl shadow-xs"
-            >
-              <span>← Back to Overview</span>
-            </button>
-            <WorkoutLogger onFinish={() => setSessionStarted(false)} />
-          </div>
+            )}
+          </section>
         )}
 
         {activeTab === "plates" && <PlateCalculator />}
 
         {activeTab === "progress" && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 text-center shadow-xs mt-4">
-            <h3 className="text-xl font-bold text-slate-900">
-              Progress Tracker
-            </h3>
-            <p className="text-sm text-slate-500 mt-2">
-              Your personal records and progressive overload logs will appear
-              here.
+          <section className="rounded-3xl border border-yellow-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-black text-slate-900">Your stats</h2>
+            <dl className="mt-4 grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl bg-yellow-100 p-3">
+                <dt className="text-xs font-semibold text-yellow-800">Age</dt>
+                <dd className="text-lg font-black text-slate-900">{age}</dd>
+              </div>
+              <div className="rounded-2xl bg-yellow-100 p-3">
+                <dt className="text-xs font-semibold text-yellow-800">
+                  Height
+                </dt>
+                <dd className="text-lg font-black text-slate-900">
+                  {height} cm
+                </dd>
+              </div>
+              <div className="rounded-2xl bg-yellow-100 p-3">
+                <dt className="text-xs font-semibold text-yellow-800">
+                  Weight
+                </dt>
+                <dd className="text-lg font-black text-slate-900">
+                  {weight} kg
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-sm text-slate-500">
+              Workout history and charts will show up here.
             </p>
-          </div>
+          </section>
         )}
       </div>
 
-      {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-6 py-3 shadow-lg z-30">
-        <div className="max-w-md mx-auto flex justify-around items-center">
-          <button
-            onClick={() => {
-              setActiveTab("workout");
-              setSessionStarted(false);
-            }}
-            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-              activeTab === "workout"
-                ? "text-amber-500"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <span>🏋️‍♂️</span>
-            <span>Workout</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("plates")}
-            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-              activeTab === "plates"
-                ? "text-amber-500"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <span>⚖️</span>
-            <span>Plates</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("progress")}
-            className={`flex flex-col items-center gap-1 text-xs font-bold transition-colors ${
-              activeTab === "progress"
-                ? "text-amber-500"
-                : "text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <span>📈</span>
-            <span>Progress</span>
-          </button>
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-yellow-300 bg-white">
+        <div className="mx-auto flex max-w-md">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 py-4 text-sm font-bold transition ${
+                activeTab === tab.id
+                  ? "border-t-4 border-yellow-400 bg-yellow-100 text-slate-950"
+                  : "border-t-4 border-transparent text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
       </nav>
     </main>
