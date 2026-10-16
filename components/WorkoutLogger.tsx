@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 
-// Accept any props passed from page.tsx so TypeScript never complains
 export default function WorkoutLogger(props: {
   routine?: any;
   onFinish?: () => void;
@@ -47,62 +46,64 @@ export default function WorkoutLogger(props: {
   };
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-zinc-950 text-zinc-100 min-h-screen font-sans">
-      {/* Minimalist Header */}
-      <div className="mb-6">
-        <span className="text-xs uppercase tracking-widest text-emerald-400 font-semibold">
+    <div className="max-w-md mx-auto p-6 bg-slate-50 text-slate-900 min-h-screen font-sans">
+      {/* Airy, Minimalist Header */}
+      <div className="mb-8">
+        <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md">
           Exercise 1 of 4
         </span>
-        <h1 className="text-2xl font-bold mt-1 text-white">{exercise.name}</h1>
-        <p className="text-sm text-zinc-400 mt-1">
-          Target:{" "}
-          <span className="text-zinc-200 font-medium">
-            {exercise.targetSets} sets
-          </span>{" "}
-          × {exercise.targetRepRange}
+        <h1 className="text-3xl font-extrabold tracking-tight mt-3 text-slate-900">
+          {exercise.name}
+        </h1>
+        <p className="text-sm font-medium text-slate-500 mt-1">
+          Goal:{" "}
+          <span className="text-slate-800">{exercise.targetSets} sets</span> ×{" "}
+          {exercise.targetRepRange}
         </p>
 
-        {/* Progressive Overload Hint Card */}
+        {/* Clean Overload Card */}
         {exercise.lastWeek && (
-          <div className="mt-3 p-3 bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-between text-xs text-zinc-300">
-            <span>🔥 Last week&apos;s best:</span>
-            <span className="font-semibold text-emerald-400">
+          <div className="mt-4 p-4 bg-white border border-slate-200/80 rounded-2xl shadow-sm flex items-center justify-between text-sm">
+            <span className="text-slate-500 font-medium">
+              Last session best:
+            </span>
+            <span className="font-bold text-emerald-600">
               {exercise.lastWeek.weight} × {exercise.lastWeek.reps} reps
             </span>
           </div>
         )}
       </div>
 
-      {/* Set Rows Container */}
-      <div className="space-y-3">
+      {/* Spacious Set Cards */}
+      <div className="space-y-4">
         {sets.map((set, index) => (
           <div
             key={set.setNumber}
-            className={`p-4 rounded-2xl border transition-all ${
+            className={`p-5 rounded-2xl border transition-all shadow-sm ${
               set.completed
-                ? "bg-emerald-950/20 border-emerald-500/30"
-                : "bg-zinc-900/60 border-zinc-800"
+                ? "bg-emerald-50/50 border-emerald-300 ring-1 ring-emerald-300"
+                : "bg-white border-slate-200"
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-bold text-zinc-300">
-                SET {set.setNumber}
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-xs font-bold tracking-wider text-slate-400 uppercase">
+                Set {set.setNumber}
               </span>
               <button
                 onClick={() => toggleComplete(index)}
-                className={`text-xs px-3 py-1 rounded-full font-medium transition-colors ${
+                className={`text-xs px-3.5 py-1.5 rounded-xl font-semibold transition-all ${
                   set.completed
-                    ? "bg-emerald-500 text-zinc-950"
-                    : "bg-zinc-800 text-zinc-400 hover:text-white"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                 }`}
               >
-                {set.completed ? "Done ✓" : "Mark Done"}
+                {set.completed ? "Completed ✓" : "Mark Done"}
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">
                   Weight (kg)
                 </label>
                 <input
@@ -110,19 +111,19 @@ export default function WorkoutLogger(props: {
                   placeholder="0"
                   value={set.weight}
                   onChange={(e) => updateSet(index, "weight", e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-lg font-semibold text-white focus:outline-none focus:border-emerald-500 text-center"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-[10px] uppercase tracking-wider text-zinc-400 mb-1">
-                  Reps Completed
+                <label className="block text-xs font-semibold text-slate-500 mb-1.5">
+                  Reps Done
                 </label>
                 <input
                   type="number"
                   placeholder="0"
                   value={set.reps}
                   onChange={(e) => updateSet(index, "reps", e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2.5 text-lg font-semibold text-white focus:outline-none focus:border-emerald-500 text-center"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-xl font-bold text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center transition-colors"
                 />
               </div>
             </div>
@@ -130,10 +131,10 @@ export default function WorkoutLogger(props: {
         ))}
       </div>
 
-      {/* Footer Navigation Action */}
+      {/* Spacious Footer Button */}
       <button
         onClick={handleNext}
-        className="w-full mt-6 bg-white text-zinc-950 font-bold py-3.5 rounded-2xl hover:bg-zinc-200 transition-colors"
+        className="w-full mt-8 bg-slate-900 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-slate-800 transition-all text-base"
       >
         Next Exercise →
       </button>
