@@ -5,17 +5,11 @@ import React, { useState } from "react";
 export default function PlateCalculator() {
   const [targetWeight, setTargetWeight] = useState<string>("100");
 
-  // Standard Olympic Barbell weight = 20kg
   const barbellWeight = 20;
   const target = parseFloat(targetWeight) || 0;
-
-  // Calculate weight needed per side
   const weightPerSide = Math.max(0, (target - barbellWeight) / 2);
 
-  // Available plates (kg)
   const availablePlates = [25, 20, 15, 10, 5, 2.5, 1.25];
-
-  // Calculate breakdown per side
   let remaining = weightPerSide;
   const breakdown: { plate: number; count: number }[] = [];
 
@@ -29,18 +23,24 @@ export default function PlateCalculator() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-zinc-950 text-zinc-100 font-sans">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-white">Plate Calculator</h2>
-        <p className="text-xs text-zinc-400 mt-1">
-          Enter your total target weight. Standard barbell (20kg) is
+    <div className="max-w-md mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+        <span className="text-xs font-bold uppercase tracking-widest text-emerald-600 bg-emerald-50 px-3 py-1 rounded-md">
+          Utility Tool
+        </span>
+        <h2 className="text-2xl font-black text-slate-900 mt-3">
+          Plate Calculator
+        </h2>
+        <p className="text-sm text-slate-500 mt-1 leading-relaxed">
+          Enter your total target weight. The 20kg standard barbell is
           automatically deducted.
         </p>
       </div>
 
-      {/* Target Input Box */}
-      <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl mb-6">
-        <label className="block text-xs uppercase tracking-wider text-zinc-400 mb-2">
+      {/* Input Card */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+        <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
           Total Target Weight (kg)
         </label>
         <div className="flex items-center gap-3">
@@ -48,45 +48,45 @@ export default function PlateCalculator() {
             type="number"
             value={targetWeight}
             onChange={(e) => setTargetWeight(e.target.value)}
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-3 text-2xl font-bold text-white focus:outline-none focus:border-emerald-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-4 text-3xl font-black text-slate-900 focus:outline-none focus:border-emerald-600 focus:bg-white text-center"
           />
-          <span className="text-lg font-semibold text-zinc-400">kg</span>
+          <span className="text-xl font-black text-slate-400">kg</span>
         </div>
       </div>
 
-      {/* Visual Breakdown Result Card */}
-      <div className="bg-zinc-900/60 border border-zinc-800 p-5 rounded-2xl">
-        <div className="text-center pb-4 border-b border-zinc-800">
-          <span className="text-xs text-zinc-400 uppercase tracking-widest">
+      {/* Breakdown Result Card */}
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs">
+        <div className="text-center pb-5 border-b border-slate-100">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
             Load on EACH side
           </span>
-          <div className="text-3xl font-extrabold text-emerald-400 mt-1">
+          <div className="text-4xl font-black text-emerald-600 mt-2">
             {weightPerSide > 0 ? `${weightPerSide} kg` : "0 kg"}
           </div>
         </div>
 
-        <div className="mt-4 space-y-2.5">
-          <p className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
+        <div className="mt-5 space-y-3">
+          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
             Plates needed per side:
           </p>
           {target < barbellWeight ? (
-            <p className="text-sm text-amber-400 py-2">
-              Target weight must be greater than the 20kg barbell.
+            <p className="text-sm font-semibold text-rose-600 py-3 text-center bg-rose-50 rounded-2xl">
+              Target weight must be at least 20kg (barbell weight).
             </p>
           ) : breakdown.length === 0 ? (
-            <p className="text-sm text-zinc-400 py-2">
-              Just the empty barbell!
+            <p className="text-sm font-semibold text-slate-600 py-3 text-center bg-slate-50 rounded-2xl">
+              Just the empty 20kg barbell!
             </p>
           ) : (
             breakdown.map((item) => (
               <div
                 key={item.plate}
-                className="flex items-center justify-between bg-zinc-950 px-4 py-2.5 rounded-xl border border-zinc-800"
+                className="flex items-center justify-between bg-slate-50 px-5 py-3.5 rounded-2xl border border-slate-200/80"
               >
-                <span className="text-sm font-bold text-white">
+                <span className="text-sm font-black text-slate-800">
                   {item.plate} kg plate
                 </span>
-                <span className="text-sm font-semibold text-emerald-400">
+                <span className="text-base font-black text-emerald-600">
                   × {item.count}
                 </span>
               </div>
